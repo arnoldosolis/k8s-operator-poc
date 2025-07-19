@@ -7,11 +7,10 @@ webhooks:
 - admissionReviewVersions:
   - v1
   clientConfig:
-    url: https://10.1.1.6:9443/mutate-webapp-my-domain-v1-guestbook # This allows for local iteration as otherwise it uses k8s service
-    # service:
-    #   name: webhook-service
-    #   namespace: system
-    #   path: /mutate-webapp-my-domain-v1-guestbook
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-webapp-my-domain-v1-guestbook
   failurePolicy: Fail
   name: mguestbook-v1.kb.io
   rules:
@@ -34,11 +33,10 @@ webhooks:
 - admissionReviewVersions:
   - v1
   clientConfig:
-    url: https://10.1.1.6:9443/validate-webapp-my-domain-v1-guestbook # This allows for local iteration as otherwise it uses k8s service
-    # service:
-    #   name: webhook-service
-    #   namespace: system
-    #   path: /validate-webapp-my-domain-v1-guestbook
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-webapp-my-domain-v1-guestbook
   failurePolicy: Fail
   name: vguestbook-v1.kb.io
   rules:

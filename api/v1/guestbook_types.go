@@ -30,6 +30,7 @@ type GuestbookSpec struct {
 
 	// Foo is an example field of Guestbook. Edit guestbook_types.go to remove/update
 	AppName string `json:"appName,omitempty"`
+	Domain  string `json:"domain,omitempty"`
 }
 
 // GuestbookStatus defines the observed state of Guestbook.

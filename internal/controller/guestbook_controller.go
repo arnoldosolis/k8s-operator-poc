@@ -17,8 +17,14 @@ limitations under the License.
 package controller
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -49,9 +55,45 @@ type GuestbookReconciler struct {
 func (r *GuestbookReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := logf.FromContext(ctx)
 
-	logger.Info("PICKED SOMETHING UP")
-	// TODO(user): your logic here
+	// Get Guestbook instance
+	var guestbook webappv1.Guestbook
+	if err := r.Get(ctx, req.NamespacedName, &guestbook); err != nil {
+		if apierrors.IsNotFound(err) {
+			return ctrl.Result{}, nil // Resource deleted
+		}
+		return ctrl.Result{}, err
+	}
 
+	data := map[string]string{
+		"appName": guestbook.Spec.AppName,
+		"domain":  guestbook.Spec.Domain,
+	}
+
+	url := "http://localhost:8080/hello-world-with-body"
+	// Convert data to json
+	jsonData, err := json.Marshal(data)
+
+	if err != nil {
+		fmt.Println("JSON marshal error:", err)
+		return ctrl.Result{}, err
+	}
+
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonData))
+	if err != nil {
+		fmt.Println("POST Request Error:", err)
+		return ctrl.Result{}, err
+	}
+	defer resp.Request.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println("Read error:", err)
+		return ctrl.Result{}, err
+	}
+
+	fmt.Println("Status Code:", resp.StatusCode)
+	logger.Info("Recieved response", "body", string(body))
+	fmt.Println("Response Body:", string(body))
 	return ctrl.Result{}, nil
 }
 

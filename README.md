@@ -176,6 +176,6 @@ IP.1 = <your-local-ip-here>
 These commands create your server.csr as well as the tls.crt and tls.key file that you will need. 
 It also signs it using the minikube certificate authority. Note: These commmands asssume everything is in one directory.
 ```
-openssl req -new -nodes -out server.csr -newkey rsa:2048 -keyout tls.key -config csr.conf
-openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out tls.crt -days 365 -extensions req_ext -extfile csr.conf
+openssl req -new -nodes -out server.csr -newkey rsa:2048 -keyout tls.key -config san.cnf
+openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out tls.crt -days 365 -extensions req_ext -extfile san.cnf
 ```
