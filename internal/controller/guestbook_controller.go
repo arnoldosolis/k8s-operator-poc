@@ -91,9 +91,7 @@ func (r *GuestbookReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, err
 	}
 
-	fmt.Println("Status Code:", resp.StatusCode)
 	logger.Info("Recieved response", "body", string(body))
-	fmt.Println("Response Body:", string(body))
 	return ctrl.Result{}, nil
 }
 
