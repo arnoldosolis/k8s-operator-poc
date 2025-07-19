@@ -37,6 +37,7 @@ type GuestbookSpec struct {
 type GuestbookStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	// https://alenkacz.medium.com/kubernetes-operator-best-practices-implementing-observedgeneration-250728868792
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 }
 
