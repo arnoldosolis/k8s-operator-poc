@@ -54,6 +54,7 @@ type GuestbookReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.21.0/pkg/reconcile
 func (r *GuestbookReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := logf.FromContext(ctx)
+	url := "http://localhost:8080/hello-world-with-body"
 
 	// Get Guestbook instance
 	var guestbook webappv1.Guestbook
@@ -63,13 +64,12 @@ func (r *GuestbookReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		}
 		return ctrl.Result{}, err
 	}
-
 	data := map[string]string{
 		"appName": guestbook.Spec.AppName,
 		"domain":  guestbook.Spec.Domain,
 	}
 
-	url := "http://localhost:8080/hello-world-with-body"
+	// if (guestbook.Status) // left off here
 	// Convert data to json
 	jsonData, err := json.Marshal(data)
 

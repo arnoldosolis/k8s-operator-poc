@@ -25,3 +25,6 @@ go.work
 *.swp
 *.swo
 *~
+
+# To avoid accidental commit (I want to keep current manifests)
+/config/webhook/*
