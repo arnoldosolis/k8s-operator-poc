@@ -148,6 +148,11 @@ func (r *GuestbookReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			return ctrl.Result{}, err
 		}
 		logger.Info("Guestbook is being created", "Custom Resource Name:", guestbook.Name, "Namespace:", guestbook.Namespace, "Response Body:", string(body))
+		guestbook.Status.ObservedGeneration = guestbook.Generation
+		if err := r.Status().Update(ctx, &guestbook); err != nil {
+			logger.Error(err, "Failed to update status.observedGeneration")
+			return ctrl.Result{}, err
+		}
 		return ctrl.Result{}, nil
 	}
 
