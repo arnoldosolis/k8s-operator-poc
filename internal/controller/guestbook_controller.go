@@ -34,6 +34,10 @@ import (
 	webappv1 "my.domain/guestbook/api/v1"
 )
 
+// Just a name that we assign finalizer
+// Once its in use, finalzier name should NEVER be changed
+// If you do change the finalizer name: All existing CRs will be stuck with the old finalizer, and
+// Your controller won’t recognize or remove it during deletion, Which means those CRs will hang in "Terminating" forever.
 const guestbookFinalizer = "webapp.my.domain/finalizer"
 
 // GuestbookReconciler reconciles a Guestbook object
