@@ -18,8 +18,6 @@ package v1
 
 import (
 	"context"
-	"fmt"
-	"strings"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -59,12 +57,12 @@ var _ webhook.CustomDefaulter = &GuestbookCustomDefaulter{}
 
 // Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind Guestbook.
 func (d *GuestbookCustomDefaulter) Default(_ context.Context, obj runtime.Object) error {
-	guestbook, ok := obj.(*webappv1.Guestbook)
+	// guestbook, ok := obj.(*webappv1.Guestbook)
 
-	if !ok {
-		return fmt.Errorf("expected an Guestbook object but got %T", obj)
-	}
-	guestbooklog.Info("Defaulting for Guestbook", "name", guestbook.GetName())
+	// if !ok {
+	// 	return fmt.Errorf("expected an Guestbook object but got %T", obj)
+	// }
+	// guestbooklog.Info("Defaulting for Guestbook", "name", guestbook.GetName())
 
 	// TODO(user): fill in your defaulting logic.
 
@@ -89,14 +87,14 @@ var _ webhook.CustomValidator = &GuestbookCustomValidator{}
 
 // ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type Guestbook.
 func (v *GuestbookCustomValidator) ValidateCreate(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
-	guestbook, ok := obj.(*webappv1.Guestbook)
-	if strings.Contains(strings.ToLower(guestbook.Spec.AppName), "random") {
-		return nil, fmt.Errorf("spec.appName must not contain the word %T", guestbook.Spec.AppName)
-	}
-	if !ok {
-		return nil, fmt.Errorf("expected a Guestbook object but got %T", obj)
-	}
-	guestbooklog.Info("Validation for Guestbook upon creation", "name", guestbook.GetName())
+	// guestbook, ok := obj.(*webappv1.Guestbook)
+	// if strings.Contains(strings.ToLower(guestbook.Spec.AppName), "random") {
+	// 	return nil, fmt.Errorf("spec.appName must not contain the word %T", guestbook.Spec.AppName)
+	// }
+	// if !ok {
+	// 	return nil, fmt.Errorf("expected a Guestbook object but got %T", obj)
+	// }
+	// guestbooklog.Info("Validation for Guestbook upon creation", "name", guestbook.GetName())
 
 	// TODO(user): fill in your validation logic upon object creation.
 
@@ -105,11 +103,11 @@ func (v *GuestbookCustomValidator) ValidateCreate(_ context.Context, obj runtime
 
 // ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type Guestbook.
 func (v *GuestbookCustomValidator) ValidateUpdate(_ context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
-	guestbook, ok := newObj.(*webappv1.Guestbook)
-	if !ok {
-		return nil, fmt.Errorf("expected a Guestbook object for the newObj but got %T", newObj)
-	}
-	guestbooklog.Info("Validation for Guestbook upon update", "name", guestbook.GetName())
+	// guestbook, ok := newObj.(*webappv1.Guestbook)
+	// if !ok {
+	// 	return nil, fmt.Errorf("expected a Guestbook object for the newObj but got %T", newObj)
+	// }
+	// guestbooklog.Info("Validation for Guestbook upon update", "name", guestbook.GetName())
 
 	// TODO(user): fill in your validation logic upon object update.
 
@@ -118,11 +116,11 @@ func (v *GuestbookCustomValidator) ValidateUpdate(_ context.Context, oldObj, new
 
 // ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type Guestbook.
 func (v *GuestbookCustomValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	guestbook, ok := obj.(*webappv1.Guestbook)
-	if !ok {
-		return nil, fmt.Errorf("expected a Guestbook object but got %T", obj)
-	}
-	guestbooklog.Info("Validation for Guestbook upon deletion", "name", guestbook.GetName())
+	// guestbook, ok := obj.(*webappv1.Guestbook)
+	// if !ok {
+	// 	return nil, fmt.Errorf("expected a Guestbook object but got %T", obj)
+	// }
+	// guestbooklog.Info("Validation for Guestbook upon deletion", "name", guestbook.GetName())
 
 	// TODO(user): fill in your validation logic upon object deletion.
 

@@ -4,7 +4,7 @@ metadata:
   labels:
     app.kubernetes.io/name: guestbook
     app.kubernetes.io/managed-by: kustomize
-  name: guestbook-default
+  name: guestbook-default-1
 spec:
   appName: "Arnoldo"
   domain: "General"
