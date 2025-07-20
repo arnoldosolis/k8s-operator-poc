@@ -53,6 +53,7 @@ spec:
                 description: |-
                   INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
                   Important: Run "make" to regenerate code after modifying this file
+                  https://alenkacz.medium.com/kubernetes-operator-best-practices-implementing-observedgeneration-250728868792
                 format: int64
                 type: integer
             type: object

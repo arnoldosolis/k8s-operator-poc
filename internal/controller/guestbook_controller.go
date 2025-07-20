@@ -28,10 +28,13 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	webappv1 "my.domain/guestbook/api/v1"
 )
+
+const guestbookFinalizer = "webapp.my.domain/finalizer"
 
 // GuestbookReconciler reconciles a Guestbook object
 type GuestbookReconciler struct {
@@ -60,6 +63,8 @@ func (r *GuestbookReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	var guestbook webappv1.Guestbook
 	if err := r.Get(ctx, req.NamespacedName, &guestbook); err != nil {
 		if apierrors.IsNotFound(err) {
+			// Deleted resource (finalizer already removed, nothing to do)
+			logger.Info("Guestbook deleted (object no longer exists)")
 			return ctrl.Result{}, nil // Resource deleted
 		}
 		return ctrl.Result{}, err
@@ -69,29 +74,116 @@ func (r *GuestbookReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		"domain":  guestbook.Spec.Domain,
 	}
 
-	// if (guestbook.Status) // left off here
-	// Convert data to json
-	jsonData, err := json.Marshal(data)
+	// -------------------- DELETE HANDLING --------------------
+	if !guestbook.ObjectMeta.DeletionTimestamp.IsZero() {
+		if controllerutil.ContainsFinalizer(&guestbook, guestbookFinalizer) {
+			jsonData, err := json.Marshal(data)
+			if err != nil {
+				logger.Error(err, "JSON marshal error", "Error:", err)
+				return ctrl.Result{}, err
+			}
 
-	if err != nil {
-		fmt.Println("JSON marshal error:", err)
-		return ctrl.Result{}, err
+			req, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(jsonData))
+			if err != nil {
+				logger.Error(err, "Error creating request", "Error:", err)
+				return ctrl.Result{}, err
+			}
+			req.Header.Set("Content-Type", "application/json")
+
+			client := &http.Client{}
+			resp, err := client.Do(req)
+			if err != nil {
+				logger.Error(err, "DELETE Request Error", "Error:", err)
+				return ctrl.Result{}, err
+			}
+
+			defer resp.Body.Close()
+
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				logger.Error(err, "Read error", "Error:", err)
+				return ctrl.Result{}, err
+			}
+			logger.Info("Guestbook is being deleted", "Custom Resource Name:", guestbook.Name, "Namespace:", guestbook.Namespace, "Response Body:", string(body))
+
+			// Remove finalizer so deletion can complete
+			controllerutil.RemoveFinalizer(&guestbook, guestbookFinalizer)
+			if err := r.Update(ctx, &guestbook); err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+		return ctrl.Result{}, nil
 	}
 
-	resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonData))
-	if err != nil {
-		fmt.Println("POST Request Error:", err)
-		return ctrl.Result{}, err
-	}
-	defer resp.Request.Body.Close()
+	// -------------------- CREATE HANDLING --------------------
+	if !controllerutil.ContainsFinalizer(&guestbook, guestbookFinalizer) {
+		jsonData, err := json.Marshal(data)
+		if err != nil {
+			logger.Error(err, "JSON marshal error", "Error:", err)
+			return ctrl.Result{}, err
+		}
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println("Read error:", err)
-		return ctrl.Result{}, err
+		resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonData))
+		if err != nil {
+			logger.Error(err, "POST Request Error", "Error:", err)
+			return ctrl.Result{}, err
+		}
+		defer resp.Request.Body.Close()
+
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			fmt.Println("Read error:", err)
+			return ctrl.Result{}, err
+		}
+		logger.Info("Guestbook is being created", "Custom Resource Name:", guestbook.Name, "Namespace:", guestbook.Namespace, "Response Body:", string(body))
+
+		// Add the finalizer so we can handle deletion events later
+		controllerutil.AddFinalizer(&guestbook, guestbookFinalizer)
+		// Save the finalizer update to the API server
+		if err := r.Update(ctx, &guestbook); err != nil {
+			return ctrl.Result{}, err
+		}
+		return ctrl.Result{}, nil
 	}
 
-	logger.Info("Recieved response", "body", string(body))
+	// -------------------- UPDATE HANDLING --------------------
+	if guestbook.Generation != guestbook.Status.ObservedGeneration {
+		jsonData, err := json.Marshal(data)
+		if err != nil {
+			logger.Error(err, "JSON marshal error", "Error:", err)
+			return ctrl.Result{}, err
+		}
+
+		req, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(jsonData))
+		if err != nil {
+			logger.Error(err, "Error creating request", "Error:", err)
+			return ctrl.Result{}, err
+		}
+		req.Header.Set("Content-Type", "application/json")
+
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			logger.Error(err, "PUT Request Error", "Error:", err)
+			return ctrl.Result{}, err
+		}
+
+		defer resp.Body.Close()
+
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			logger.Error(err, "Read error", "Error:", err)
+			return ctrl.Result{}, err
+		}
+		logger.Info("Guestbook is being updated", "Custom Resource Name:", guestbook.Name, "Namespace:", guestbook.Namespace, "Response Body:", string(body))
+
+		guestbook.Status.ObservedGeneration = guestbook.Generation
+		if err := r.Status().Update(ctx, &guestbook); err != nil {
+			logger.Error(err, "Failed to update status.observedGeneration")
+			return ctrl.Result{}, err
+		}
+	}
+
 	return ctrl.Result{}, nil
 }
 

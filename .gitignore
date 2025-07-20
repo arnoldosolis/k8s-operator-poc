@@ -27,4 +27,4 @@ go.work
 *~
 
 # To avoid accidental commit (I want to keep current manifests)
-/config/webhook/*
+config/webhook/manifests.yaml
