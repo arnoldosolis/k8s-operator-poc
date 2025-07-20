@@ -74,6 +74,47 @@ func (r *GuestbookReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		"domain":  guestbook.Spec.Domain,
 	}
 
+	// -------------------- DELETE HANDLING --------------------
+	if !guestbook.ObjectMeta.DeletionTimestamp.IsZero() {
+		if controllerutil.ContainsFinalizer(&guestbook, guestbookFinalizer) {
+			jsonData, err := json.Marshal(data)
+			if err != nil {
+				logger.Error(err, "JSON marshal error", "Error:", err)
+				return ctrl.Result{}, err
+			}
+			req, err := http.NewRequest(http.MethodDelete, url, bytes.NewBuffer(jsonData))
+			if err != nil {
+				logger.Error(err, "Error creating request", "Error:", err)
+				return ctrl.Result{}, err
+			}
+			req.Header.Set("Content-Type", "application/json")
+			client := &http.Client{}
+			resp, err := client.Do(req)
+			if err != nil {
+				logger.Error(err, "DELETE Request Error", "Error:", err)
+				return ctrl.Result{}, err
+			}
+			defer resp.Body.Close()
+
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				logger.Error(err, "Read error", "Error:", err)
+				return ctrl.Result{}, err
+			}
+			logger.Info("Guestbook is being deleted", "Custom Resource Name:", guestbook.Name, "Namespace:", guestbook.Namespace, "Response Body:", string(body))
+			logger.Info("About to remove finalizer", "FinalizerPresent", controllerutil.ContainsFinalizer(&guestbook, guestbookFinalizer))
+			// Remove finalizer so deletion can complete
+			controllerutil.RemoveFinalizer(&guestbook, guestbookFinalizer)
+			if err := r.Update(ctx, &guestbook); err != nil {
+				logger.Error(err, "reconcilation error", "Error:", err)
+				return ctrl.Result{}, err
+			}
+			logger.Info("Finalizer removed, deletion should proceed")
+		}
+		return ctrl.Result{}, nil
+	}
+	// ---------------------------------------------------------
+
 	// -------------------- CREATE HANDLING --------------------
 	if !controllerutil.ContainsFinalizer(&guestbook, guestbookFinalizer) {
 		// Add the finalizer so we can handle deletion events later
@@ -147,47 +188,6 @@ func (r *GuestbookReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			logger.Error(err, "Failed to update status.observedGeneration")
 			return ctrl.Result{}, err
 		}
-	}
-	// ---------------------------------------------------------
-
-	// -------------------- DELETE HANDLING --------------------
-	if !guestbook.ObjectMeta.DeletionTimestamp.IsZero() {
-		if controllerutil.ContainsFinalizer(&guestbook, guestbookFinalizer) {
-			jsonData, err := json.Marshal(data)
-			if err != nil {
-				logger.Error(err, "JSON marshal error", "Error:", err)
-				return ctrl.Result{}, err
-			}
-
-			req, err := http.NewRequest(http.MethodDelete, url, bytes.NewBuffer(jsonData))
-			if err != nil {
-				logger.Error(err, "Error creating request", "Error:", err)
-				return ctrl.Result{}, err
-			}
-			req.Header.Set("Content-Type", "application/json")
-
-			client := &http.Client{}
-			resp, err := client.Do(req)
-			if err != nil {
-				logger.Error(err, "DELETE Request Error", "Error:", err)
-				return ctrl.Result{}, err
-			}
-			defer resp.Body.Close()
-
-			body, err := io.ReadAll(resp.Body)
-			if err != nil {
-				logger.Error(err, "Read error", "Error:", err)
-				return ctrl.Result{}, err
-			}
-			logger.Info("Guestbook is being deleted", "Custom Resource Name:", guestbook.Name, "Namespace:", guestbook.Namespace, "Response Body:", string(body))
-
-			// Remove finalizer so deletion can complete
-			controllerutil.RemoveFinalizer(&guestbook, guestbookFinalizer)
-			if err := r.Update(ctx, &guestbook); err != nil {
-				return ctrl.Result{}, err
-			}
-		}
-		return ctrl.Result{}, nil
 	}
 	// ---------------------------------------------------------
 
