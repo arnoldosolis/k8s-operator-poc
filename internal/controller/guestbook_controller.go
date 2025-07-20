@@ -83,7 +83,7 @@ func (r *GuestbookReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 				return ctrl.Result{}, err
 			}
 
-			req, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(jsonData))
+			req, err := http.NewRequest(http.MethodDelete, url, bytes.NewBuffer(jsonData))
 			if err != nil {
 				logger.Error(err, "Error creating request", "Error:", err)
 				return ctrl.Result{}, err
